@@ -1,0 +1,3 @@
+rootProject.name = 'ElmCompare'
+
+include ':app'
