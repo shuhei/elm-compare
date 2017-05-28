@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Date exposing (Date)
 import NativeUi as Ui exposing (Node)
 import NativeUi.Style as Style exposing (defaultTransform)
 import NativeUi.Elements as Elements exposing (..)
@@ -10,14 +11,52 @@ import NativeUi.Image as Image exposing (..)
 -- MODEL
 
 
+type alias Forecast =
+    { time: Int
+    , temperature: Float
+    , windBearing: Float
+    , windSpeed: Float
+    , summary: Maybe String
+    , icon: Maybe String
+    }
+
+
+type alias Coords =
+    { lat: Float
+    , lng: Float
+    }
+
+
+type alias Location =
+    { name: String
+    , coords: Coords
+    }
+
+
+type alias Day =
+    { date: Date
+    , candidates: List Date
+    , weather: List Forecast
+    }
+
+
 type alias Model =
-    Int
+    { location: Maybe Location
+    , today: Maybe Date
+    , future: Maybe Day
+    , past: Maybe Day
+    , count: Int
+    }
 
 
 model : Model
 model =
-    9000
-
+  { location = Nothing
+  , today = Nothing
+  , future = Nothing
+  , past = Nothing
+  , count = 9000
+  }
 
 
 -- UPDATE
@@ -32,10 +71,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Increment ->
-            ( model + 1, Cmd.none )
+            ({ model | count = model.count + 1 }, Cmd.none )
 
         Decrement ->
-            ( model - 1, Cmd.none )
+            ({ model | count = model.count - 1 }, Cmd.none )
 
 
 
@@ -43,7 +82,7 @@ update msg model =
 
 
 view : Model -> Node Msg
-view count =
+view model =
     let
         imageSource =
             { uri = "https://raw.githubusercontent.com/futurice/spiceprogram/master/assets/img/logo/chilicorn_no_text-128.png"
@@ -69,7 +108,7 @@ view count =
                     , Style.marginBottom 30
                     ]
                 ]
-                [ Ui.string ("Counter: " ++ toString count)
+                [ Ui.string ("Counter: " ++ toString model.count)
                 ]
             , Elements.view
                 [ Ui.style

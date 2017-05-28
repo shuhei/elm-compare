@@ -1,4 +1,6 @@
 /elm-native-ui
 /elm-ops-tooling
 
-elm-stuff
+/ElmCompare/elm-stuff
+/ElmCompare/elm.js
+/elm-package.json
