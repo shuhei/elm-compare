@@ -9,6 +9,7 @@ import NativeUi.Image as Image exposing (..)
 import NativeUi.Properties as P
 import NativeApi.Dimensions exposing (window)
 import Events exposing (ScrollEvent, onMomentumScrollEnd)
+import DateUtils exposing (..)
 
 
 -- MODEL
@@ -63,19 +64,19 @@ init flags =
             Date.fromTime flags.timestamp
 
         yesterday =
-            Date.fromTime <| flags.timestamp - 24 * 60 * 60 * 1000
+            subDays 1 today
 
         model =
             { location = Nothing
             , today = today
             , future =
                 { date = today
-                , candidates = []
+                , candidates = List.map (flip addDays <| today) <| List.range 0 6
                 , weather = []
                 }
             , past =
                 { date = yesterday
-                , candidates = []
+                , candidates = [ yesterday, today ]
                 , weather = []
                 }
             }
@@ -88,16 +89,24 @@ init flags =
 
 
 type Msg
-    = DateChange Date
+    = FutureDateChange Date
+    | PastDateChange Date
     | NoOp
+
+
+updateDate : Day -> Date -> Day
+updateDate day date =
+    { day | date = date }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case Debug.log "update" msg of
-        DateChange date ->
-            -- TODO: Update date
-            ( model, Cmd.none )
+        FutureDateChange date ->
+            ( { model | future = updateDate model.future date }, Cmd.none )
+
+        PastDateChange date ->
+            ( { model | past = updateDate model.past date }, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -105,6 +114,7 @@ update msg model =
 
 
 -- VIEW
+
 
 header : Model -> Node Msg
 header model =
@@ -140,9 +150,10 @@ footer model =
             ]
         ]
         [ dateSelector
-            (Date.fromTime 1496010919896)
-            [ Date.fromTime 1496010919896, Date.fromTime 1496010919896 ]
-            "#000"
+            FutureDateChange
+            model.today
+            model.future.candidates
+            "#ff6666cc"
         , Elements.text
             [ Ui.style
                 [ Style.color "#88998899"
@@ -151,10 +162,12 @@ footer model =
             ]
             [ Ui.string "vs" ]
         , dateSelector
-            (Date.fromTime 1496010919896)
-            [ Date.fromTime 1496010919896, Date.fromTime 1496010919896 ]
-            "#000"
+            PastDateChange
+            model.today
+            model.past.candidates
+            "#889988dd"
         ]
+
 
 view : Model -> Node Msg
 view model =
@@ -171,11 +184,6 @@ view model =
         ]
 
 
-formatDate : Date -> String
-formatDate date =
-    toString (Date.year date) ++ ", dummy"
-
-
 dateOptions : String -> Date -> Date -> Node Msg
 dateOptions textColor today date =
     let
@@ -188,7 +196,7 @@ dateOptions textColor today date =
                     , Style.fontSize 22
                     ]
                 ]
-                [ Ui.string (formatDate date) ]
+                [ Ui.string <| relativeDate today date ]
     in
         Elements.view
             [ Ui.style
@@ -201,8 +209,8 @@ dateOptions textColor today date =
             [ textView ]
 
 
-dateSelector : Date -> List Date -> String -> Node Msg
-dateSelector today candidates textColor =
+dateSelector : (Date -> Msg) -> Date -> List Date -> String -> Node Msg
+dateSelector tagger today candidates textColor =
     let
         items =
             List.map (dateOptions textColor today) candidates
@@ -216,7 +224,7 @@ dateSelector today candidates textColor =
                 , P.alwaysBounceHorizontal False
 
                 -- https://github.com/facebook/react-native/issues/2251
-                , onMomentumScrollEnd <| onScrollEnd candidates
+                , onMomentumScrollEnd <| onScrollEnd tagger candidates
                 ]
                 items
     in
@@ -227,8 +235,8 @@ dateSelector today candidates textColor =
             [ selector ]
 
 
-onScrollEnd : List Date -> ScrollEvent -> Msg
-onScrollEnd candidates event =
+onScrollEnd : (Date -> Msg) -> List Date -> ScrollEvent -> Msg
+onScrollEnd tagger candidates event =
     let
         index =
             floor (event.contentOffset.x / window.width)
@@ -237,10 +245,11 @@ onScrollEnd candidates event =
     in
         case List.head <| List.drop index candidates of
             Just date ->
-                DateChange date
+                tagger date
 
             Nothing ->
                 NoOp
+
 
 
 -- PROGRAM
