@@ -8,6 +8,7 @@ import NativeUi.Events exposing (..)
 import NativeUi.Image as Image exposing (..)
 import NativeUi.Properties as P
 import NativeApi.Dimensions exposing (window)
+import Events exposing (ScrollEvent, onMomentumScrollEnd)
 
 -- MODEL
 

@@ -6,7 +6,8 @@
 react-native init ElmCompare
 hub clone ohanhi/elm-native-ui
 hub clone elm-ops-tooling
-# Comment out require()s in Element.js
+# Comment out require()s in Element.js because NavigationExperimental has been
+# removed from react-native core.
 ./self_publish.sh
 ```
 
