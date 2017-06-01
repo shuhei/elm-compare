@@ -1,12 +1,13 @@
 module Main exposing (..)
 
 import Date exposing (Date)
-import NativeUi as Ui exposing (Node)
+import NativeUi as Ui exposing (Node, Property)
 import NativeUi.Style as Style exposing (defaultTransform)
 import NativeUi.Elements as Elements exposing (..)
 import NativeUi.Events exposing (..)
 import NativeUi.Image as Image exposing (..)
-
+import NativeUi.Properties as P
+import NativeApi.Dimensions exposing (window)
 
 -- MODEL
 
@@ -49,8 +50,8 @@ type alias Model =
     }
 
 
-model : Model
-model =
+initialModel : Model
+initialModel =
   { location = Nothing
   , today = Nothing
   , future = Nothing
@@ -65,17 +66,25 @@ model =
 type Msg
     = Increment
     | Decrement
+    | DateChange Date
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    case Debug.log "update" msg of
         Increment ->
             ({ model | count = model.count + 1 }, Cmd.none )
 
         Decrement ->
             ({ model | count = model.count - 1 }, Cmd.none )
 
+        DateChange date ->
+            -- TODO: Update date
+            (model, Cmd.none)
+
+        NoOp ->
+            (model, Cmd.none)
 
 
 -- VIEW
@@ -90,59 +99,81 @@ view model =
             }
     in
         Elements.view
-            [ Ui.style [ Style.alignItems "center" ]
+            [ Ui.style
+                [ Style.alignItems "center"
+                , Style.paddingTop 100
+                ]
             ]
-            [ image
-                [ Ui.style
-                    [ Style.height 64
-                    , Style.width 64
-                    , Style.marginBottom 30
-                    , Style.marginTop 30
-                    ]
-                , source imageSource
-                ]
-                []
-            , text
-                [ Ui.style
-                    [ Style.textAlign "center"
-                    , Style.marginBottom 30
-                    ]
-                ]
-                [ Ui.string ("Counter: " ++ toString model.count)
-                ]
-            , Elements.view
-                [ Ui.style
-                    [ Style.width 80
-                    , Style.flexDirection "row"
-                    , Style.justifyContent "space-between"
-                    ]
-                ]
-                [ button Decrement "#d33" "-"
-                , button Increment "#3d3" "+"
-                ]
+            [ dateSelector
+                (Date.fromTime 1496010919896)
+                [ Date.fromTime 1496010919896, Date.fromTime 1496010919896 ]
+                "#000"
             ]
 
 
-button : Msg -> String -> String -> Node Msg
-button msg color content =
-    text
-        [ Ui.style
-            [ Style.color "white"
-            , Style.textAlign "center"
-            , Style.backgroundColor color
-            , Style.paddingTop 5
-            , Style.paddingBottom 5
-            , Style.width 30
-            , Style.fontWeight "bold"
-            , Style.shadowColor "#000"
-            , Style.shadowOpacity 0.25
-            , Style.shadowOffset 1 1
-            , Style.shadowRadius 5
-            ]
-        , onPress msg
-        ]
-        [ Ui.string content ]
+formatDate : Date -> String
+formatDate date =
+    toString (Date.year date) ++ ", dummy"
 
+
+dateOptions : String -> Date -> Date -> Node Msg
+dateOptions textColor today date =
+    let
+        textView =
+            text
+                [ Ui.style
+                    [ Style.color textColor
+                    , Style.textAlign "center"
+                    , Style.paddingVertical 12
+                    , Style.fontSize 22
+                    ]
+                ]
+                [ Ui.string (formatDate date) ]
+    in
+        Elements.view
+            [ Ui.style
+                [ Style.flexDirection "row"
+                , Style.justifyContent "center"
+                , Style.alignItems "center"
+                , Style.width window.width
+                ]
+            ]
+            [ textView ]
+
+dateSelector : Date -> List Date -> String -> Node Msg
+dateSelector today candidates textColor =
+    let
+        items = List.map (dateOptions textColor today) candidates
+        selector =
+            scrollView
+                [ P.horizontal True
+                , P.pagingEnabled True
+                , P.showsHorizontalScrollIndicator False
+                , P.scrollEventThrottle 100
+                , P.alwaysBounceHorizontal False
+                -- https://github.com/facebook/react-native/issues/2251
+                , onMomentumScrollEnd <| onScrollEnd candidates
+                ]
+                items
+    in
+        Elements.view
+            [ Ui.style
+                [ Style.width window.width ]
+            ]
+            [ selector ]
+
+
+onScrollEnd : List Date -> ScrollEvent -> Msg
+onScrollEnd candidates event =
+    let
+        index = floor (event.contentOffset.x / window.width)
+        -- TODO: Call only when the index changes.
+    in
+        case List.head <| List.drop index candidates of
+            Just date ->
+                DateChange date
+            Nothing ->
+                NoOp
 
 
 -- PROGRAM
@@ -151,7 +182,7 @@ button msg color content =
 main : Program Never Model Msg
 main =
     Ui.program
-        { init = ( model, Cmd.none )
+        { init = (initialModel, Cmd.none)
         , view = view
         , update = update
         , subscriptions = \_ -> Sub.none
