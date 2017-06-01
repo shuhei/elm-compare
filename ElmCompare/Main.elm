@@ -10,106 +10,165 @@ import NativeUi.Properties as P
 import NativeApi.Dimensions exposing (window)
 import Events exposing (ScrollEvent, onMomentumScrollEnd)
 
+
 -- MODEL
 
 
 type alias Forecast =
-    { time: Int
-    , temperature: Float
-    , windBearing: Float
-    , windSpeed: Float
-    , summary: Maybe String
-    , icon: Maybe String
+    { time : Int
+    , temperature : Float
+    , windBearing : Float
+    , windSpeed : Float
+    , summary : Maybe String
+    , icon : Maybe String
     }
 
 
 type alias Coords =
-    { lat: Float
-    , lng: Float
+    { lat : Float
+    , lng : Float
     }
 
 
 type alias Location =
-    { name: String
-    , coords: Coords
+    { name : String
+    , coords : Coords
     }
 
 
 type alias Day =
-    { date: Date
-    , candidates: List Date
-    , weather: List Forecast
+    { date : Date
+    , candidates : List Date
+    , weather : List Forecast
     }
 
 
 type alias Model =
-    { location: Maybe Location
-    , today: Maybe Date
-    , future: Maybe Day
-    , past: Maybe Day
-    , count: Int
+    { location : Maybe Location
+    , today : Date
+    , future : Day
+    , past : Day
     }
 
 
-initialModel : Model
-initialModel =
-  { location = Nothing
-  , today = Nothing
-  , future = Nothing
-  , past = Nothing
-  , count = 9000
-  }
+type alias Flags =
+    { timestamp : Float
+    }
+
+
+init : Flags -> ( Model, Cmd msg )
+init flags =
+    let
+        today =
+            Date.fromTime flags.timestamp
+
+        yesterday =
+            Date.fromTime <| flags.timestamp - 24 * 60 * 60 * 1000
+
+        model =
+            { location = Nothing
+            , today = today
+            , future =
+                { date = today
+                , candidates = []
+                , weather = []
+                }
+            , past =
+                { date = yesterday
+                , candidates = []
+                , weather = []
+                }
+            }
+    in
+        ( model, Cmd.none )
+
 
 
 -- UPDATE
 
 
 type Msg
-    = Increment
-    | Decrement
-    | DateChange Date
+    = DateChange Date
     | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case Debug.log "update" msg of
-        Increment ->
-            ({ model | count = model.count + 1 }, Cmd.none )
-
-        Decrement ->
-            ({ model | count = model.count - 1 }, Cmd.none )
-
         DateChange date ->
             -- TODO: Update date
-            (model, Cmd.none)
+            ( model, Cmd.none )
 
         NoOp ->
-            (model, Cmd.none)
+            ( model, Cmd.none )
+
 
 
 -- VIEW
 
-
-view : Model -> Node Msg
-view model =
+header : Model -> Node Msg
+header model =
     let
-        imageSource =
-            { uri = "https://raw.githubusercontent.com/futurice/spiceprogram/master/assets/img/logo/chilicorn_no_text-128.png"
-            , cache = Just ForceCache
-            }
+        location =
+            Elements.text
+                [ Ui.style
+                    [ Style.color "#ff6666cc"
+                    , Style.fontSize 20
+                    ]
+                ]
+                [ Ui.string "Dummy" ]
     in
         Elements.view
             [ Ui.style
-                [ Style.alignItems "center"
-                , Style.paddingTop 100
+                [ Style.flex 1
+                , Style.paddingTop 10
+                , Style.justifyContent "center"
+                , Style.alignItems "center"
                 ]
             ]
-            [ dateSelector
-                (Date.fromTime 1496010919896)
-                [ Date.fromTime 1496010919896, Date.fromTime 1496010919896 ]
-                "#000"
+            [ location ]
+
+
+footer : Model -> Node Msg
+footer model =
+    Elements.view
+        [ Ui.style
+            [ Style.flex 1.2
+            , Style.paddingBottom 10
+            , Style.justifyContent "center"
+            , Style.alignItems "center"
             ]
+        ]
+        [ dateSelector
+            (Date.fromTime 1496010919896)
+            [ Date.fromTime 1496010919896, Date.fromTime 1496010919896 ]
+            "#000"
+        , Elements.text
+            [ Ui.style
+                [ Style.color "#88998899"
+                , Style.fontSize 20
+                ]
+            ]
+            [ Ui.string "vs" ]
+        , dateSelector
+            (Date.fromTime 1496010919896)
+            [ Date.fromTime 1496010919896, Date.fromTime 1496010919896 ]
+            "#000"
+        ]
+
+view : Model -> Node Msg
+view model =
+    Elements.view
+        [ Ui.style
+            [ Style.flex 1
+            , Style.flexDirection "column"
+            , Style.justifyContent "flex-end"
+            , Style.alignItems "center"
+            ]
+        ]
+        [ header model
+        , footer model
+        ]
 
 
 formatDate : Date -> String
@@ -141,10 +200,13 @@ dateOptions textColor today date =
             ]
             [ textView ]
 
+
 dateSelector : Date -> List Date -> String -> Node Msg
 dateSelector today candidates textColor =
     let
-        items = List.map (dateOptions textColor today) candidates
+        items =
+            List.map (dateOptions textColor today) candidates
+
         selector =
             scrollView
                 [ P.horizontal True
@@ -152,6 +214,7 @@ dateSelector today candidates textColor =
                 , P.showsHorizontalScrollIndicator False
                 , P.scrollEventThrottle 100
                 , P.alwaysBounceHorizontal False
+
                 -- https://github.com/facebook/react-native/issues/2251
                 , onMomentumScrollEnd <| onScrollEnd candidates
                 ]
@@ -167,12 +230,15 @@ dateSelector today candidates textColor =
 onScrollEnd : List Date -> ScrollEvent -> Msg
 onScrollEnd candidates event =
     let
-        index = floor (event.contentOffset.x / window.width)
+        index =
+            floor (event.contentOffset.x / window.width)
+
         -- TODO: Call only when the index changes.
     in
         case List.head <| List.drop index candidates of
             Just date ->
                 DateChange date
+
             Nothing ->
                 NoOp
 
@@ -180,10 +246,10 @@ onScrollEnd candidates event =
 -- PROGRAM
 
 
-main : Program Never Model Msg
+main : Program Flags Model Msg
 main =
-    Ui.program
-        { init = (initialModel, Cmd.none)
+    Ui.programWithFlags
+        { init = init
         , view = view
         , update = update
         , subscriptions = \_ -> Sub.none

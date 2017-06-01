@@ -57,8 +57,8 @@ type alias Offset =
 
 
 type alias Size =
-    { width: Float
-    , height: Float
+    { width : Float
+    , height : Float
     }
 
 
@@ -66,6 +66,6 @@ type alias ScrollEvent =
     { contentInset : Inset
     , contentOffset : Offset
     , contentSize : Size
-    , layoutMeasurement: Size
-    , zoomScale: Float
+    , layoutMeasurement : Size
+    , zoomScale : Float
     }
