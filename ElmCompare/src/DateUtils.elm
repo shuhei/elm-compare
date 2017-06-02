@@ -2,6 +2,7 @@ module DateUtils exposing (addDays, subDays, relativeDate, formatDate)
 
 import Date exposing (Date)
 
+
 dayInMsecs : Float
 dayInMsecs =
     24 * 60 * 60 * 1000
@@ -15,7 +16,6 @@ addDays days date =
 subDays : Int -> Date -> Date
 subDays days =
     addDays -days
-
 
 
 relativeDate : Date -> Date -> String
