@@ -64,45 +64,6 @@ emptyForecasts =
         List.map makeForecast <| List.range 0 23
 
 
-
--- TODO: Get location from the device.
-
-
-dummyLocation : Location
-dummyLocation =
-    { name = "Berlin, Germany"
-    , coords = { lat = 52.52, lng = 13.405 }
-    }
-
-
-init : Flags -> ( Model, Cmd msg )
-init flags =
-    let
-        today =
-            Date.fromTime flags.timestamp
-
-        yesterday =
-            subDays 1 today
-
-        model =
-            { apiKey = flags.apiKey
-            , location = Just dummyLocation
-            , today = today
-            , future =
-                { date = today
-                , candidates = List.map (flip addDays <| today) <| List.range 0 6
-                , forecasts = emptyForecasts
-                }
-            , past =
-                { date = yesterday
-                , candidates = [ yesterday, today ]
-                , forecasts = emptyForecasts
-                }
-            }
-    in
-        ( model, Cmd.none )
-
-
 type Msg
     = ChangeFutureDate Date
     | ChangePastDate Date

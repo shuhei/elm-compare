@@ -16,6 +16,53 @@ import DateSelector exposing (dateSelector)
 import HourlyChart exposing (hourlyChart)
 
 
+-- INIT
+-- TODO: Get location from the device.
+
+
+dummyLocation : Location
+dummyLocation =
+    { name = "Berlin, Germany"
+    , coords = { lat = 52.52, lng = 13.405 }
+    }
+
+
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    let
+        today =
+            Date.fromTime flags.timestamp
+
+        yesterday =
+            subDays 1 today
+
+        model =
+            { apiKey = flags.apiKey
+            , location = Just dummyLocation
+            , today = today
+            , future =
+                { date = today
+                , candidates = List.map (flip addDays <| today) <| List.range 0 6
+                , forecasts = emptyForecasts
+                }
+            , past =
+                { date = yesterday
+                , candidates = [ yesterday, today ]
+                , forecasts = emptyForecasts
+                }
+            }
+
+        commands =
+            [ Weather.getWeather model.apiKey dummyLocation.coords today
+                |> Http.send FutureForecastsReceived
+            , Weather.getWeather model.apiKey dummyLocation.coords yesterday
+                |> Http.send PastForecastsReceived
+            ]
+    in
+        ( model, Cmd.batch commands )
+
+
+
 -- UPDATE
 
 
