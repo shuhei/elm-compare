@@ -5,6 +5,7 @@ import NativeUi.Elements as E
 import NativeUi.Style as S
 import NativeUi.ART.Elements as AE
 import NativeUi.ART.Properties as AP
+import NativeUi.ART.Path as Path
 import NativeApi.Dimensions exposing (window)
 import Model exposing (..)
 
@@ -65,6 +66,64 @@ makeRanges forecasts =
             |> List.reverse
 
 
+calcHeight : Float -> Float -> Float -> Float
+calcHeight min max temperature =
+    if min == max then
+        0
+    else
+        let
+            ratio =
+                (temperature - min) / (max - min)
+        in
+            chartHeight * (ratio * 0.6 + 0.1)
+
+
+
+-- heights are a list of 24 items for 00:00-23:00.
+-- To keep enough space to show icons at the screen edge, draw:
+-- - the previous days' 23:30-24:00 with the value of 00:00.
+-- - 23:00-23:30 with the value of 23:00.
+
+
+areaChartPath : Float -> Float -> List Float -> List String
+areaChartPath w h heights =
+    let
+        makePoint i height =
+            { x = (0.5 + toFloat i) * unitSize
+            , y = h - height
+            }
+
+        points =
+            List.indexedMap makePoint heights
+
+        nextPoints =
+            case List.tail points of
+                Just tail ->
+                    tail ++ [ { x = 0, y = 0 } ]
+
+                Nothing ->
+                    []
+
+        -- http://stackoverflow.com/questions/7054272/how-to-draw-smooth-curve-through-n-points-using-javascript-html5-canvas
+        makeCurve i p q =
+            if i == 0 then
+                [ Path.moveTo 0 h
+                , Path.lineTo 0 p.y
+                , Path.lineTo p.x p.y
+                ]
+            else if i == 22 then
+                [ Path.curveTo p.x p.y q.x q.y
+                , Path.lineTo chartWidth q.y
+                , Path.lineTo w h
+                , Path.close
+                ]
+            else
+                [ Path.curveTo p.x p.y ((p.x + q.x) / 2) ((p.y + q.y) / 2) ]
+    in
+        List.concat <|
+            List.map3 makeCurve (List.range 0 22) nextPoints points
+
+
 
 -- VIEWS
 
@@ -103,14 +162,38 @@ weatherBorders ranges =
         E.view [ topStyle ] borders
 
 
+makeChartPath : Float -> Float -> Day -> List String
+makeChartPath min max day =
+    let
+        heights =
+            Debug.log "heights" <|
+                List.map (\f -> calcHeight min max f.temperature) day.forecasts
+    in
+        Debug.log "chart path" <|
+            areaChartPath chartWidth chartHeight heights
+
+
 hourlyChart : Model -> Node Msg
 hourlyChart model =
     let
         labels =
-            List.map (hourLabel << ((*) 2)) <| List.range 0 11
+            List.map (hourLabel << (*) 2) <| List.range 0 11
 
         ranges =
             makeRanges model.future.forecasts
+
+        temperatures =
+            List.concatMap
+                (\day -> List.map (\f -> f.temperature) day.forecasts)
+                [ model.future, model.past ]
+
+        minTemp =
+            Debug.log "min" <|
+                List.foldr min (1 / 0) temperatures
+
+        maxTemp =
+            Debug.log "max" <|
+                List.foldr max (-1 / 0) temperatures
 
         chart =
             E.view
@@ -122,12 +205,12 @@ hourlyChart model =
                     ]
                     [ AE.shape
                         [ AP.fill "#99999944"
-                        , AP.d "M37,17v15H14V17z M50,0H0v50h50z"
+                        , AP.d <| makeChartPath minTemp maxTemp model.past
                         ]
                         []
                     , AE.shape
                         [ AP.fill "#ff666666"
-                        , AP.d "M37,17v15H14V17z M50,0H0v50h50z"
+                        , AP.d <| makeChartPath minTemp maxTemp model.future
                         ]
                         []
                     ]

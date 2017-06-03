@@ -4,9 +4,9 @@ import Json.Encode
 import NativeUi exposing (Property, property)
 
 
-d : String -> Property msg
+d : List String -> Property msg
 d val =
-    property "d" (Json.Encode.string val)
+    property "d" (Json.Encode.list <| List.map Json.Encode.string val)
 
 
 

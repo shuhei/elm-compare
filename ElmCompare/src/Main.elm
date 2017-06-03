@@ -29,6 +29,10 @@ updateForecasts day forecasts =
     { day | forecasts = forecasts }
 
 
+
+-- TODO: Show HTTP error message
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case Debug.log "update" msg of
@@ -85,8 +89,11 @@ header model =
                 ]
                 [ Ui.string <|
                     case model.location of
-                        Just location -> location.name
-                        Nothing -> ""
+                        Just location ->
+                            location.name
+
+                        Nothing ->
+                            ""
                 ]
     in
         Elements.view
