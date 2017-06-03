@@ -83,7 +83,11 @@ header model =
                     , Style.fontSize 20
                     ]
                 ]
-                [ Ui.string "Dummy" ]
+                [ Ui.string <|
+                    case model.location of
+                        Just location -> location.name
+                        Nothing -> ""
+                ]
     in
         Elements.view
             [ Ui.style

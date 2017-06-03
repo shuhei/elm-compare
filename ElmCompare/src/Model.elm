@@ -70,7 +70,7 @@ emptyForecasts =
 
 dummyLocation : Location
 dummyLocation =
-    { name = "Berlin, German"
+    { name = "Berlin, Germany"
     , coords = { lat = 52.52, lng = 13.405 }
     }
 
