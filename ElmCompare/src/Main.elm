@@ -192,6 +192,7 @@ view model =
             , Style.flexDirection "column"
             , Style.justifyContent "flex-end"
             , Style.alignItems "center"
+            , Style.backgroundColor "#f5fccc"
             ]
         ]
         [ header model
