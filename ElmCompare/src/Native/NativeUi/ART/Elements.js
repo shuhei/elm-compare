@@ -1,4 +1,4 @@
-var _shuhei$elm_compare$Native_NativeUi_ART_Elements = (function () {
+var _ohanhi$elm_native_ui$Native_NativeUi_ART_Elements = (function () {
   var ART = require('ReactNativeART');
   var Animated = require('react-native').Animated;
 

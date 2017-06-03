@@ -11,6 +11,7 @@ import NativeApi.Dimensions exposing (window)
 import Model exposing (..)
 import DateUtils exposing (..)
 import DateSelector exposing (dateSelector)
+import HourlyChart exposing (hourlyChart)
 
 
 -- UPDATE
@@ -102,6 +103,7 @@ view model =
             ]
         ]
         [ header model
+        , hourlyChart model
         , footer model
         ]
 
