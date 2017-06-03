@@ -3,6 +3,7 @@ pushd ./ElmCompare
 rm -rf ./elm-stuff
 mv elm-package.json elm-package.json.bk
 # Install core, etc.
+yes | elm-package install elm-lang/http
 yes | npm run compile
 mv -f elm-package.json.bk elm-package.json
 popd

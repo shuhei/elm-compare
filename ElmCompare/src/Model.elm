@@ -1,11 +1,13 @@
 module Model exposing (..)
 
 import Date exposing (Date)
+import Http
 import DateUtils exposing (..)
 
 
 type alias Model =
-    { location : Maybe Location
+    { apiKey : String
+    , location : Maybe Location
     , today : Date
     , future : Day
     , past : Day
@@ -18,7 +20,7 @@ type alias Forecast =
     , windBearing : Float
     , windSpeed : Float
     , summary : Maybe String
-    , icon : String
+    , icon : Maybe String
     }
 
 
@@ -37,12 +39,39 @@ type alias Location =
 type alias Day =
     { date : Date
     , candidates : List Date
-    , weather : List Forecast
+    , forecasts : List Forecast
     }
 
 
 type alias Flags =
-    { timestamp : Float
+    { apiKey : String
+    , timestamp : Float
+    }
+
+
+emptyForecasts : List Forecast
+emptyForecasts =
+    let
+        makeForecast hour =
+            { time = hour
+            , temperature = 0
+            , windSpeed = 0
+            , windBearing = 0
+            , summary = Nothing
+            , icon = Nothing
+            }
+    in
+        List.map makeForecast <| List.range 0 23
+
+
+
+-- TODO: Get location from the device.
+
+
+dummyLocation : Location
+dummyLocation =
+    { name = "Berlin, German"
+    , coords = { lat = 52.52, lng = 13.405 }
     }
 
 
@@ -56,17 +85,18 @@ init flags =
             subDays 1 today
 
         model =
-            { location = Nothing
+            { apiKey = flags.apiKey
+            , location = Just dummyLocation
             , today = today
             , future =
                 { date = today
                 , candidates = List.map (flip addDays <| today) <| List.range 0 6
-                , weather = []
+                , forecasts = emptyForecasts
                 }
             , past =
                 { date = yesterday
                 , candidates = [ yesterday, today ]
-                , weather = []
+                , forecasts = emptyForecasts
                 }
             }
     in
@@ -74,6 +104,8 @@ init flags =
 
 
 type Msg
-    = FutureDateChange Date
-    | PastDateChange Date
+    = ChangeFutureDate Date
+    | ChangePastDate Date
+    | FutureForecastsReceived (Result Http.Error (List Forecast))
+    | PastForecastsReceived (Result Http.Error (List Forecast))
     | NoOp

@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Date exposing (Date)
+import Http
 import NativeUi as Ui exposing (Node, Property)
 import NativeUi.Style as Style exposing (defaultTransform)
 import NativeUi.Elements as Elements exposing (..)
@@ -10,6 +11,7 @@ import NativeUi.Properties as P
 import NativeApi.Dimensions exposing (window)
 import Model exposing (..)
 import DateUtils exposing (..)
+import Weather
 import DateSelector exposing (dateSelector)
 import HourlyChart exposing (hourlyChart)
 
@@ -22,17 +24,49 @@ updateDate day date =
     { day | date = date }
 
 
+updateForecasts : Day -> List Forecast -> Day
+updateForecasts day forecasts =
+    { day | forecasts = forecasts }
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case Debug.log "update" msg of
-        FutureDateChange date ->
-            ( { model | future = updateDate model.future date }, Cmd.none )
+        ChangeFutureDate date ->
+            ( { model | future = updateDate model.future date }
+            , getWeather model date FutureForecastsReceived
+            )
 
-        PastDateChange date ->
-            ( { model | past = updateDate model.past date }, Cmd.none )
+        ChangePastDate date ->
+            ( { model | past = updateDate model.past date }
+            , getWeather model date PastForecastsReceived
+            )
+
+        FutureForecastsReceived (Ok forecasts) ->
+            ( { model | future = updateForecasts model.future forecasts }, Cmd.none )
+
+        FutureForecastsReceived (Err _) ->
+            ( model, Cmd.none )
+
+        PastForecastsReceived (Ok forecasts) ->
+            ( { model | past = updateForecasts model.past forecasts }, Cmd.none )
+
+        PastForecastsReceived (Err _) ->
+            ( model, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
+
+
+getWeather : Model -> Date -> (Result Http.Error (List Forecast) -> Msg) -> Cmd Msg
+getWeather model date tagger =
+    case model.location of
+        Just location ->
+            Weather.getWeather model.apiKey location.coords date
+                |> Http.send tagger
+
+        Nothing ->
+            Cmd.none
 
 
 
@@ -73,7 +107,7 @@ footer model =
             ]
         ]
         [ dateSelector
-            FutureDateChange
+            ChangeFutureDate
             model.today
             model.future.candidates
             "#ff6666cc"
@@ -85,7 +119,7 @@ footer model =
             ]
             [ Ui.string "vs" ]
         , dateSelector
-            PastDateChange
+            ChangePastDate
             model.today
             model.past.candidates
             "#889988dd"

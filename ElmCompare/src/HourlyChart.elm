@@ -10,7 +10,7 @@ import Model exposing (..)
 
 
 type alias WeatherRange =
-    { icon : String
+    { icon : Maybe String
     , start : Int
     , end : Int
     }
@@ -110,7 +110,7 @@ hourlyChart model =
             List.map (hourLabel << ((*) 2)) <| List.range 0 11
 
         ranges =
-            makeRanges model.future.weather
+            makeRanges model.future.forecasts
 
         chart =
             E.view

@@ -1,6 +1,7 @@
 /elm-native-ui
 /elm-ops-tooling
 
+/ElmCompare/secret.json
 /ElmCompare/elm-stuff
 /ElmCompare/elm.js
 /elm-package.json
