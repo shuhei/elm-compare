@@ -13,9 +13,14 @@ lineTo x y =
 
 curveTo : Float -> Float -> Float -> Float -> String
 curveTo c1x c1y x y =
-    "S " ++
-        toString c1x ++ "," ++ toString c1y ++ " " ++
-        toString x ++ "," ++ toString y
+    "S "
+        ++ toString c1x
+        ++ ","
+        ++ toString c1y
+        ++ " "
+        ++ toString x
+        ++ ","
+        ++ toString y
 
 
 close : String

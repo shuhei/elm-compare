@@ -118,7 +118,8 @@ areaChartPath w h heights =
                 , Path.close
                 ]
             else
-                [ Path.curveTo p.x p.y ((p.x + q.x) / 2) ((p.y + q.y) / 2) ]
+                -- [ Path.curveTo p.x p.y ((p.x + q.x) / 2) ((p.y + q.y) / 2) ]
+                [ Path.lineTo p.x p.y ]
     in
         List.concat <|
             List.map3 makeCurve (List.range 0 22) nextPoints points
