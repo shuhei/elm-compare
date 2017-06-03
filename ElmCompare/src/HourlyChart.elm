@@ -9,6 +9,17 @@ import NativeApi.Dimensions exposing (window)
 import Model exposing (..)
 
 
+type alias WeatherRange =
+    { icon : String
+    , start : Int
+    , end : Int
+    }
+
+
+
+-- DIMENSIONS
+
+
 chartWidth : Float
 chartWidth =
     window.width
@@ -29,6 +40,35 @@ iconSize =
     unitSize * 1.6
 
 
+
+-- COORDINATES
+
+
+makeRanges : List Forecast -> List WeatherRange
+makeRanges forecasts =
+    let
+        mergeItems item ranges =
+            case ranges of
+                [] ->
+                    [ item ]
+
+                head :: tail ->
+                    if item.start % 2 == 1 || item.icon == head.icon then
+                        { head | end = item.end } :: tail
+                    else
+                        item :: ranges
+    in
+        forecasts
+            |> List.indexedMap
+                (\i f -> { icon = f.icon, start = i, end = i })
+            |> List.foldr mergeItems []
+            |> List.reverse
+
+
+
+-- VIEWS
+
+
 hourLabel : Int -> Node Msg
 hourLabel hour =
     AE.text
@@ -36,11 +76,41 @@ hourLabel hour =
         [ Ui.string <| toString hour ]
 
 
+weatherIcons : List WeatherRange -> Node Msg
+weatherIcons ranges =
+    let
+        -- TODO: Set source to the image
+        makeIcon range =
+            E.view
+                [ iconBoxStyle range ]
+                [ E.image [ iconStyle ] [] ]
+
+        icons =
+            []
+    in
+        E.view [ topStyle ] icons
+
+
+weatherBorders : List WeatherRange -> Node Msg
+weatherBorders ranges =
+    let
+        makeBorder i range =
+            E.view [ borderStyle i range ] []
+
+        borders =
+            List.indexedMap makeBorder ranges
+    in
+        E.view [ topStyle ] borders
+
+
 hourlyChart : Model -> Node Msg
 hourlyChart model =
     let
         labels =
             List.map (hourLabel << ((*) 2)) <| List.range 0 11
+
+        ranges =
+            makeRanges model.future.weather
 
         chart =
             E.view
@@ -65,9 +135,15 @@ hourlyChart model =
     in
         E.view
             [ containerStyle ]
-            [ chart
+            [ weatherBorders ranges
+            , chart
+            , weatherIcons ranges
             , E.view [ labelsStyle ] labels
             ]
+
+
+
+-- STYLES
 
 
 containerStyle : Property Msg
@@ -114,4 +190,42 @@ iconStyle =
     Ui.style
         [ S.width iconSize
         , S.height iconSize
+        ]
+
+
+topStyle : Property Msg
+topStyle =
+    Ui.style
+        [ S.position "absolute"
+        , S.top 0
+        , S.height 50
+        ]
+
+
+iconBoxStyle : WeatherRange -> Property Msg
+iconBoxStyle range =
+    Ui.style
+        [ S.position "absolute"
+        , S.left <| unitSize * toFloat range.start
+        , S.width <| unitSize * toFloat (range.end - range.start + 1)
+        , S.justifyContent "flex-start"
+        , S.alignItems "center"
+        ]
+
+
+borderStyle : Int -> WeatherRange -> Property Msg
+borderStyle i range =
+    Ui.style
+        [ S.position "absolute"
+        , S.left <| unitSize * toFloat range.start
+        , S.width <| unitSize * toFloat (range.end - range.start + 1)
+        , S.top 0
+        , S.borderStyle "solid"
+        , S.borderLeftColor "#ff666633"
+        , S.borderLeftWidth <|
+            if i == 0 then
+                0
+            else
+                1
+        , S.height chartHeight
         ]

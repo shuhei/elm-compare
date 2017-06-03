@@ -18,7 +18,7 @@ type alias Forecast =
     , windBearing : Float
     , windSpeed : Float
     , summary : Maybe String
-    , icon : Maybe String
+    , icon : String
     }
 
 
