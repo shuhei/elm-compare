@@ -3,11 +3,12 @@
 ## Set up
 
 ```sh
-react-native init ElmCompare
+# Clone this repo
+# Put `{ "apiKey": "Your Dark Sky API key" }` as ElmCompare/secret.json
+cd elm-compare
 hub clone ohanhi/elm-native-ui
 hub clone elm-ops-tooling
-# Comment out require()s in Element.js because NavigationExperimental has been
-# removed from react-native core.
+# Comment out require()s in Element.js
 ./self_publish.sh
 ```
 
