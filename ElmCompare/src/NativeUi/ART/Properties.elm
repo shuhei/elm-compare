@@ -3,7 +3,9 @@ module NativeUi.ART.Properties exposing (..)
 import Json.Encode
 import NativeUi exposing (Property, property)
 
+
 -- https://github.com/react-native-china/react-native-ART-doc/blob/master/doc.md
+
 
 d : List String -> Property msg
 d val =
@@ -44,6 +46,7 @@ strokeWidth val =
     property "strokeWidth" (Json.Encode.string val)
 
 
+
 -- TODO: strokeDash
 
 
@@ -56,10 +59,16 @@ type StrokeCap
 strokeCap : StrokeCap -> Property msg
 strokeCap val =
     let
-        stringValue = case val of
-            StrokeCapButt -> "butt"
-            StrokeCapRound -> "round"
-            StrokeCapSquare -> "square"
+        stringValue =
+            case val of
+                StrokeCapButt ->
+                    "butt"
+
+                StrokeCapRound ->
+                    "round"
+
+                StrokeCapSquare ->
+                    "square"
     in
         property "strokeCap" (Json.Encode.string stringValue)
 
@@ -73,10 +82,16 @@ type StrokeJoin
 strokeJoin : StrokeJoin -> Property msg
 strokeJoin val =
     let
-        stringValue = case val of
-            StrokeJoinMiter -> "miter"
-            StrokeJoinRound -> "round"
-            StrokeJoinBevel -> "Bevel"
+        stringValue =
+            case val of
+                StrokeJoinMiter ->
+                    "miter"
+
+                StrokeJoinRound ->
+                    "round"
+
+                StrokeJoinBevel ->
+                    "Bevel"
     in
         property "strokeJoin" (Json.Encode.string stringValue)
 
@@ -90,12 +105,19 @@ type Alignment
 alignment : Alignment -> Property msg
 alignment val =
     let
-        stringValue = case val of
-            AlignmentLeft -> "left"
-            AlignmentRight -> "right"
-            AlignmentCenter -> "center"
+        stringValue =
+            case val of
+                AlignmentLeft ->
+                    "left"
+
+                AlignmentRight ->
+                    "right"
+
+                AlignmentCenter ->
+                    "center"
     in
         property "alignment" (Json.Encode.string stringValue)
+
 
 
 -- TODO: font

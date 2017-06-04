@@ -3,11 +3,13 @@ module HourlyChart exposing (hourlyChart)
 import NativeUi as Ui exposing (Node, Property)
 import NativeUi.Elements as E
 import NativeUi.Style as S
+import NativeUi.Properties as P
 import NativeUi.ART.Elements as AE
 import NativeUi.ART.Properties as AP
 import NativeUi.ART.Path as Path
 import NativeApi.Dimensions exposing (window)
 import Model exposing (..)
+import Icons
 
 
 type alias WeatherRange =
@@ -43,6 +45,7 @@ iconSize =
 
 
 -- COORDINATES
+-- TODO: Better way to do this without reverse?
 
 
 makeRanges : List Forecast -> List WeatherRange
@@ -55,7 +58,7 @@ makeRanges forecasts =
 
                 head :: tail ->
                     if item.start % 2 == 1 || item.icon == head.icon then
-                        { head | end = item.end } :: tail
+                        { head | start = item.start } :: tail
                     else
                         item :: ranges
     in
@@ -137,19 +140,29 @@ hourLabel hour =
         [ Ui.string <| toString hour ]
 
 
+weatherIcon : WeatherRange -> Node Msg
+weatherIcon range =
+    let
+        children =
+            case Maybe.andThen Icons.getIcon range.icon of
+                Just icon ->
+                    [ E.image
+                        [ iconStyle
+                        , Icons.localSource icon
+                        ]
+                        []
+                    ]
+
+                Nothing ->
+                    []
+    in
+        E.view [ iconBoxStyle range ] children
+
+
 weatherIcons : List WeatherRange -> Node Msg
 weatherIcons ranges =
-    let
-        -- TODO: Set source to the image
-        makeIcon range =
-            E.view
-                [ iconBoxStyle range ]
-                [ E.image [ iconStyle ] [] ]
-
-        icons =
-            []
-    in
-        E.view [ topStyle ] icons
+    E.view [ topStyle ] <|
+        List.map weatherIcon ranges
 
 
 weatherBorders : List WeatherRange -> Node Msg
@@ -168,11 +181,9 @@ makeChartPath : Float -> Float -> Day -> List String
 makeChartPath min max day =
     let
         heights =
-            Debug.log "heights" <|
-                List.map (\f -> calcHeight min max f.temperature) day.forecasts
+            List.map (\f -> calcHeight min max f.temperature) day.forecasts
     in
-        Debug.log "chart path" <|
-            areaChartPath chartWidth chartHeight heights
+        areaChartPath chartWidth chartHeight heights
 
 
 hourlyChart : Model -> Node Msg
@@ -190,12 +201,10 @@ hourlyChart model =
                 [ model.future, model.past ]
 
         minTemp =
-            Debug.log "min" <|
-                List.foldl min (1 / 0) temperatures
+            List.foldl min (1 / 0) temperatures
 
         maxTemp =
-            Debug.log "max" <|
-                List.foldl max (-1 / 0) temperatures
+            List.foldl max (-1 / 0) temperatures
 
         chart =
             E.view
