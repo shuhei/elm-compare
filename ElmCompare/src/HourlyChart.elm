@@ -109,13 +109,13 @@ areaChartPath w h heights =
             if i == 0 then
                 [ Path.moveTo 0 h
                 , Path.lineTo 0 p.y
-                , Path.lineTo p.x p.y
+                , Path.curveTo (p.x / 2) p.y
                 ]
             else if i > 0 && i < 22 then
-                [ Path.curveTo2 ((p.x + q.x) / 2) ((p.y + q.y) / 2) p.x p.y]
+                [ Path.curveTo ((p.x + q.x) / 2) ((p.y + q.y) / 2) ]
             else if i == 22 then
-                [ Path.curveTo2 p.x p.y q.x q.y
-                , Path.lineTo chartWidth q.y
+                [ Path.curveTo ((q.x + chartWidth) / 2) q.y
+                , Path.curveTo chartWidth q.y
                 , Path.lineTo w h
                 , Path.close
                 ]
@@ -191,11 +191,11 @@ hourlyChart model =
 
         minTemp =
             Debug.log "min" <|
-                List.foldr min (1 / 0) temperatures
+                List.foldl min (1 / 0) temperatures
 
         maxTemp =
             Debug.log "max" <|
-                List.foldr max (-1 / 0) temperatures
+                List.foldl max (-1 / 0) temperatures
 
         chart =
             E.view
