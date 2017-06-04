@@ -111,15 +111,16 @@ areaChartPath w h heights =
                 , Path.lineTo 0 p.y
                 , Path.lineTo p.x p.y
                 ]
+            else if i > 0 && i < 22 then
+                [ Path.curveTo2 ((p.x + q.x) / 2) ((p.y + q.y) / 2) p.x p.y]
             else if i == 22 then
-                [ Path.curveTo p.x p.y q.x q.y
+                [ Path.curveTo2 p.x p.y q.x q.y
                 , Path.lineTo chartWidth q.y
                 , Path.lineTo w h
                 , Path.close
                 ]
             else
-                -- [ Path.curveTo p.x p.y ((p.x + q.x) / 2) ((p.y + q.y) / 2) ]
-                [ Path.lineTo p.x p.y ]
+                []
     in
         List.concat <|
             List.map3 makeCurve (List.range 0 22) nextPoints points
