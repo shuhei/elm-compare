@@ -2,17 +2,41 @@
 
 ## Set up
 
+Check out repositories:
+
 ```sh
-# Clone this repo
-# Put `{ "apiKey": "Your Dark Sky API key" }` as ElmCompare/secret.json
+git clone git@github.com:shuhei/elm-compare.git
 cd elm-compare
-hub clone ohanhi/elm-native-ui
-hub clone elm-ops-tooling
-# Comment out require()s in Element.js
+git clone git@github.com:ohanhi/elm-native-ui.git
+git clone git@github.com:NoRedInk/elm-ops-tooling.git
+```
+
+Comment out `require()`s in `elm-native-ui/src/Native/NativeUi/Elements.js`. This setup uses the latest version of React Native while elm-native-ui was developed against `react-native@0.37.0`. The tweak in `Element.js` is necessary because `NavigationExperimental` module was removed from React Native. If you want to use React Navigation, you need to write your own adapter. This app just turns it off because it doesn't use the navigation stuff.
+
+
+```js
+const _ohanhi$elm_native_ui$Native_NativeUi_Elements = function () {
+  return {
+    // navigationCardStack: require("NavigationCardStack"),
+    // navigationHeader: require("NavigationHeader"),
+    // navigationHeaderTitle: require("NavigationHeaderTitle"),
+  };
+}();
+```
+
+Publish `elm-native-ui` to `ElmCompare`:
+
+```
 ./self_publish.sh
 ```
 
-This setup uses the latest version of React Native while elm-native-ui was developed against `react-native@0.37.0`. The tweak in `Element.js` is necessary because `NavigationExperimental` module was removed from React Native. If you want to use React Navigation, you need to write your own adapter. This app just turns it off because it doesn't use the navigation stuff.
+Get a [Dark Sky API](https://darksky.net/dev/) key and put it into a secret JSON file at `ElmCompare/secret.json`:
+
+```json
+{
+  "apiKey": "Your API key"
+}
+```
 
 ## Run
 
