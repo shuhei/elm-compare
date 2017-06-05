@@ -45,7 +45,6 @@ iconSize =
 
 
 -- COORDINATES
--- TODO: Better way to do this without reverse?
 
 
 makeRanges : List Forecast -> List WeatherRange
@@ -66,7 +65,6 @@ makeRanges forecasts =
             |> List.indexedMap
                 (\i f -> { icon = f.icon, start = i, end = i })
             |> List.foldr mergeItems []
-            |> List.reverse
 
 
 calcHeight : Float -> Float -> Float -> Float
@@ -100,12 +98,8 @@ areaChartPath w h heights =
             List.indexedMap makePoint heights
 
         nextPoints =
-            case List.tail points of
-                Just tail ->
-                    tail ++ [ { x = 0, y = 0 } ]
-
-                Nothing ->
-                    []
+            List.tail points
+                |> Maybe.withDefault []
 
         -- http://stackoverflow.com/questions/7054272/how-to-draw-smooth-curve-through-n-points-using-javascript-html5-canvas
         makeCurve i p q =
@@ -113,11 +107,13 @@ areaChartPath w h heights =
                 [ Path.moveTo 0 h
                 , Path.lineTo 0 p.y
                 , Path.curveTo (p.x / 2) p.y
+                , Path.curveTo ((p.x + q.x) / 2) ((p.y + q.y) / 2)
                 ]
             else if i > 0 && i < 22 then
                 [ Path.curveTo ((p.x + q.x) / 2) ((p.y + q.y) / 2) ]
             else if i == 22 then
-                [ Path.curveTo ((q.x + chartWidth) / 2) q.y
+                [ Path.curveTo ((p.x + q.x) / 2) ((p.y + q.y) / 2)
+                , Path.curveTo ((q.x + chartWidth) / 2) q.y
                 , Path.curveTo chartWidth q.y
                 , Path.lineTo w h
                 , Path.close
@@ -125,8 +121,8 @@ areaChartPath w h heights =
             else
                 []
     in
-        List.concat <|
-            List.map3 makeCurve (List.range 0 22) nextPoints points
+        Debug.log "curves" <| List.concat <|
+            List.map3 makeCurve (List.range 0 22) points nextPoints
 
 
 
@@ -193,7 +189,8 @@ hourlyChart model =
             List.map (hourLabel << (*) 2) <| List.range 0 11
 
         ranges =
-            makeRanges model.future.forecasts
+            Debug.log "ranges" <|
+                makeRanges model.future.forecasts
 
         temperatures =
             List.concatMap
