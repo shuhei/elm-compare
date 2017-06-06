@@ -3090,6 +3090,10 @@ react-devtools-core@^2.0.8:
     shell-quote "^1.6.1"
     ws "^2.0.3"
 
+react-native-geocoder@^0.4.8:
+  version "0.4.8"
+  resolved "https://registry.yarnpkg.com/react-native-geocoder/-/react-native-geocoder-0.4.8.tgz#4763ad0a45bd365061b80f52c06564fcc62658e1"
+
 react-native@0.44.2:
   version "0.44.2"
   resolved "https://registry.yarnpkg.com/react-native/-/react-native-0.44.2.tgz#c8dfb747b88e6276a991980c57c50b860a98cf0e"

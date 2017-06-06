@@ -22,8 +22,8 @@ import HourlyChart exposing (hourlyChart)
 
 dummyLocation : Location
 dummyLocation =
-    { name = "Berlin, Germany"
-    , coords = { lat = 52.52, lng = 13.405 }
+    { name = Just "Berlin, Germany"
+    , coords = Just { lat = 52.52, lng = 13.405 }
     }
 
 
@@ -38,7 +38,7 @@ init flags =
 
         model =
             { apiKey = flags.apiKey
-            , location = Just dummyLocation
+            , location = dummyLocation
             , today = today
             , future =
                 { date = today
@@ -51,15 +51,8 @@ init flags =
                 , forecasts = emptyForecasts
                 }
             }
-
-        commands =
-            [ Weather.getWeather model.apiKey dummyLocation.coords today
-                |> Http.send FutureForecastsReceived
-            , Weather.getWeather model.apiKey dummyLocation.coords yesterday
-                |> Http.send PastForecastsReceived
-            ]
     in
-        ( model, Cmd.batch commands )
+        ( model, getLocation () )
 
 
 
@@ -109,6 +102,23 @@ update msg model =
         PastForecastsReceived (Err _) ->
             ( model, Cmd.none )
 
+        LocationReceived coords ->
+            let
+                commands =
+                    [ Weather.getWeather model.apiKey coords model.future.date
+                        |> Http.send FutureForecastsReceived
+                    , Weather.getWeather model.apiKey coords model.past.date
+                        |> Http.send PastForecastsReceived
+                    , geocode coords
+                    ]
+            in
+                ( { model | location = { name = model.location.name, coords = Just coords } }
+                , Cmd.batch commands )
+
+        GeocodeReceived name ->
+            ( { model | location = { name = Just name, coords = model.location.coords } }
+            , Cmd.none )
+
         NoOp ->
             ( model, Cmd.none )
 
@@ -118,9 +128,9 @@ update msg model =
 
 getWeather : Model -> Date -> (Result Http.Error (List Forecast) -> Msg) -> Cmd Msg
 getWeather model date tagger =
-    case model.location of
-        Just location ->
-            Weather.getWeather model.apiKey location.coords date
+    case model.location.coords of
+        Just coords ->
+            Weather.getWeather model.apiKey coords date
                 |> Http.send tagger
 
         Nothing ->
@@ -128,6 +138,29 @@ getWeather model date tagger =
 
 
 port animateLayout : () -> Cmd msg
+
+
+port getLocation : () -> Cmd msg
+
+
+port geocode : Coords -> Cmd msg
+
+
+-- SUBSCRIPTION
+
+
+port locations : (Coords -> msg) -> Sub msg
+
+
+port geocodes : (String -> msg) -> Sub msg
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ locations LocationReceived
+        , geocodes GeocodeReceived
+        ]
 
 
 -- VIEW
@@ -143,14 +176,7 @@ header model =
                     , Style.fontSize 20
                     ]
                 ]
-                [ Ui.string <|
-                    case model.location of
-                        Just location ->
-                            location.name
-
-                        Nothing ->
-                            ""
-                ]
+                [ Ui.string <| Maybe.withDefault "" model.location.name ]
     in
         Elements.view
             [ Ui.style
@@ -220,5 +246,5 @@ main =
         { init = init
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }

@@ -7,7 +7,7 @@ import DateUtils exposing (..)
 
 type alias Model =
     { apiKey : String
-    , location : Maybe Location
+    , location : Location
     , today : Date
     , future : Day
     , past : Day
@@ -31,8 +31,8 @@ type alias Coords =
 
 
 type alias Location =
-    { name : String
-    , coords : Coords
+    { name : Maybe String
+    , coords : Maybe Coords
     }
 
 
@@ -69,4 +69,6 @@ type Msg
     | ChangePastDate Date
     | FutureForecastsReceived (Result Http.Error (List Forecast))
     | PastForecastsReceived (Result Http.Error (List Forecast))
+    | LocationReceived Coords
+    | GeocodeReceived String
     | NoOp
