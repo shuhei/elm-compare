@@ -1,4 +1,4 @@
-module HourlyChart exposing (hourlyChart)
+module HourlyChart exposing (hourlyChart, calcHeight)
 
 import NativeUi as Ui exposing (Node, Property)
 import NativeUi.Elements as E
@@ -121,8 +121,9 @@ areaChartPath w h heights =
             else
                 []
     in
-        Debug.log "curves" <| List.concat <|
-            List.map3 makeCurve (List.range 0 22) points nextPoints
+        Debug.log "curves" <|
+            List.concat <|
+                List.map3 makeCurve (List.range 0 22) points nextPoints
 
 
 
@@ -173,13 +174,12 @@ weatherBorders ranges =
         E.view [ topStyle ] borders
 
 
-makeChartPath : Float -> Float -> Day -> List String
-makeChartPath min max day =
-    let
-        heights =
-            List.map (\f -> calcHeight min max f.temperature) day.forecasts
-    in
-        areaChartPath chartWidth chartHeight heights
+interpolateHeights : Day -> List Float
+interpolateHeights day =
+    List.map2
+        (\from to -> from + (to - from) * day.progress)
+        day.fromHeights
+        day.toHeights
 
 
 hourlyChart : Model -> Node Msg
@@ -194,7 +194,7 @@ hourlyChart model =
 
         temperatures =
             List.concatMap
-                (\day -> List.map (\f -> f.temperature) day.forecasts)
+                (List.map .temperature << .forecasts)
                 [ model.future, model.past ]
 
         minTemp =
@@ -213,12 +213,16 @@ hourlyChart model =
                     ]
                     [ AE.shape
                         [ AP.fill "#99999944"
-                        , AP.d <| makeChartPath minTemp maxTemp model.past
+                        , AP.d <|
+                            areaChartPath chartWidth chartHeight <|
+                                interpolateHeights model.past
                         ]
                         []
                     , AE.shape
                         [ AP.fill "#ff666666"
-                        , AP.d <| makeChartPath minTemp maxTemp model.future
+                        , AP.d <|
+                            areaChartPath chartWidth chartHeight <|
+                                interpolateHeights model.future
                         ]
                         []
                     ]

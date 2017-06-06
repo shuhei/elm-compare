@@ -1,8 +1,17 @@
-const { AppRegistry, LayoutAnimation } = require('react-native');
+const { AppRegistry, LayoutAnimation, Animated } = require('react-native');
 const Geocoder = require('react-native-geocoder').default;
 const Elm = require('./elm');
 const secret = require('./secret.json');
 const component = Elm.Main.start((app) => {
+  const futureProgress = new Animated.Value(0);
+  futureProgress.addListener((state) => {
+    app.ports.futureProgress.send(state.value);
+  });
+  const pastProgress = new Animated.Value(0);
+  pastProgress.addListener((state) => {
+    app.ports.pastProgress.send(state.value);
+  });
+
   app.ports.animateLayout.subscribe(() => {
     LayoutAnimation.spring();
   });
@@ -24,14 +33,29 @@ const component = Elm.Main.start((app) => {
     Geocoder.geocodePosition(coords)
       .then((res) => {
         const geocode = res[0];
-        console.log(geocode);
         const name = `${geocode.adminArea}, ${geocode.country}`;
         app.ports.geocodes.send(name);
       })
       .catch((err) => {
         console.error('Failed to geocode', err);
+        app.ports.geocodes.send('Not Found');
       });
   });
+  app.ports.animateFutureProgress.subscribe(() => {
+    spring(futureProgress);
+  });
+  app.ports.animatePastProgress.subscribe(() => {
+    spring(pastProgress);
+  });
+
+  function spring(animated) {
+    animated.setValue(0);
+    Animated.spring(animated, {
+      toValue: 1,
+      friction: 3,
+      tension: 50
+    }).start();
+  }
 }, {
   apiKey: secret.apiKey,
   timestamp: Date.now()
