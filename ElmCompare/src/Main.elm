@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Date exposing (Date)
 import Http
@@ -94,19 +94,26 @@ update msg model =
             )
 
         FutureForecastsReceived (Ok forecasts) ->
-            ( { model | future = updateForecasts model.future forecasts }, Cmd.none )
+            ( { model | future = updateForecasts model.future forecasts }
+            , animateLayout ()
+            )
 
         FutureForecastsReceived (Err _) ->
             ( model, Cmd.none )
 
         PastForecastsReceived (Ok forecasts) ->
-            ( { model | past = updateForecasts model.past forecasts }, Cmd.none )
+            ( { model | past = updateForecasts model.past forecasts }
+            , animateLayout ()
+            )
 
         PastForecastsReceived (Err _) ->
             ( model, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
+
+
+-- COMMAND
 
 
 getWeather : Model -> Date -> (Result Http.Error (List Forecast) -> Msg) -> Cmd Msg
@@ -119,6 +126,8 @@ getWeather model date tagger =
         Nothing ->
             Cmd.none
 
+
+port animateLayout : () -> Cmd msg
 
 
 -- VIEW
