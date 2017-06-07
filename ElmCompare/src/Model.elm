@@ -2,6 +2,7 @@ module Model exposing (..)
 
 import Date exposing (Date)
 import Http
+import NativeApi.Animated exposing (AnimatedValue)
 import DateUtils exposing (..)
 
 
@@ -40,6 +41,9 @@ type alias Day =
     { date : Date
     , candidates : List Date
     , forecasts : List Forecast
+    , fromHeights : List Float
+    , toHeights : List Float
+    , progress : Float
     }
 
 
@@ -71,4 +75,6 @@ type Msg
     | PastForecastsReceived (Result Http.Error (List Forecast))
     | LocationReceived Coords
     | GeocodeReceived String
+    | FutureProgressReceived Float
+    | PastProgressReceived Float
     | NoOp

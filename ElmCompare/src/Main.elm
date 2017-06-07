@@ -9,11 +9,12 @@ import NativeUi.Events exposing (..)
 import NativeUi.Image as Image exposing (..)
 import NativeUi.Properties as P
 import NativeApi.Dimensions exposing (window)
+import NativeApi.Animated exposing (AnimatedValue)
 import Model exposing (..)
 import DateUtils exposing (..)
 import Weather
 import DateSelector exposing (dateSelector)
-import HourlyChart exposing (hourlyChart)
+import HourlyChart exposing (hourlyChart, calcHeight)
 
 
 -- INIT
@@ -44,11 +45,17 @@ init flags =
                 { date = today
                 , candidates = List.map (flip addDays <| today) <| List.range 0 6
                 , forecasts = emptyForecasts
+                , fromHeights = List.repeat 24 0
+                , toHeights = List.repeat 24 0
+                , progress = 0
                 }
             , past =
                 { date = yesterday
                 , candidates = [ yesterday, today ]
                 , forecasts = emptyForecasts
+                , fromHeights = List.repeat 24 0
+                , toHeights = List.repeat 24 0
+                , progress = 0
                 }
             }
     in
@@ -64,9 +71,47 @@ updateDate day date =
     { day | date = date }
 
 
-updateForecasts : Day -> List Forecast -> Day
-updateForecasts day forecasts =
-    { day | forecasts = forecasts }
+updateForecasts : Day -> List Forecast -> List Forecast -> Day
+updateForecasts day forecasts theOther =
+    { day
+        | forecasts = forecasts
+        , fromHeights = day.toHeights
+        , toHeights = calcHeights forecasts theOther
+        , progress = 0
+    }
+
+
+updateProgress : Day -> Float -> Day
+updateProgress day progress =
+    { day | progress = progress }
+
+
+calcHeights : List Forecast -> List Forecast -> List Float
+calcHeights forecasts theOther =
+    let
+        temperatures =
+            List.concatMap
+                (List.map .temperature)
+                [ forecasts, theOther ]
+
+        minTemp =
+            List.foldl min (1 / 0) temperatures
+
+        maxTemp =
+            List.foldl max (-1 / 0) temperatures
+    in
+        List.map .temperature forecasts
+            |> List.map (calcHeight minTemp maxTemp)
+
+
+interpolate : Float -> Float -> Float -> Float
+interpolate progress from to =
+    from + (to - from) * progress
+
+
+interpolateHeights : List Float -> List Float -> Float -> List Float
+interpolateHeights fromHeights toHeights progress =
+    List.map2 (interpolate progress) fromHeights toHeights
 
 
 
@@ -87,16 +132,26 @@ update msg model =
             )
 
         FutureForecastsReceived (Ok forecasts) ->
-            ( { model | future = updateForecasts model.future forecasts }
-            , animateLayout ()
+            ( { model
+                | future = updateForecasts model.future forecasts model.past.forecasts
+              }
+            , Cmd.batch
+                [ animateLayout ()
+                , animateFutureProgress ()
+                ]
             )
 
         FutureForecastsReceived (Err _) ->
             ( model, Cmd.none )
 
         PastForecastsReceived (Ok forecasts) ->
-            ( { model | past = updateForecasts model.past forecasts }
-            , animateLayout ()
+            ( { model
+                | past = updateForecasts model.past forecasts model.future.forecasts
+              }
+            , Cmd.batch
+                [ animateLayout ()
+                , animatePastProgress ()
+                ]
             )
 
         PastForecastsReceived (Err _) ->
@@ -113,14 +168,27 @@ update msg model =
                     ]
             in
                 ( { model | location = { name = model.location.name, coords = Just coords } }
-                , Cmd.batch commands )
+                , Cmd.batch commands
+                )
 
         GeocodeReceived name ->
             ( { model | location = { name = Just name, coords = model.location.coords } }
-            , Cmd.none )
+            , Cmd.none
+            )
+
+        FutureProgressReceived progress ->
+            ( { model | future = updateProgress model.future progress }
+            , Cmd.none
+            )
+
+        PastProgressReceived progress ->
+            ( { model | past = updateProgress model.past progress }
+            , Cmd.none
+            )
 
         NoOp ->
             ( model, Cmd.none )
+
 
 
 -- COMMAND
@@ -146,6 +214,13 @@ port getLocation : () -> Cmd msg
 port geocode : Coords -> Cmd msg
 
 
+port animateFutureProgress : () -> Cmd msg
+
+
+port animatePastProgress : () -> Cmd msg
+
+
+
 -- SUBSCRIPTION
 
 
@@ -155,12 +230,21 @@ port locations : (Coords -> msg) -> Sub msg
 port geocodes : (String -> msg) -> Sub msg
 
 
+port futureProgress : (Float -> msg) -> Sub msg
+
+
+port pastProgress : (Float -> msg) -> Sub msg
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ locations LocationReceived
         , geocodes GeocodeReceived
+        , futureProgress FutureProgressReceived
+        , pastProgress PastProgressReceived
         ]
+
 
 
 -- VIEW
