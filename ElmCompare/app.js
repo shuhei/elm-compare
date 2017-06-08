@@ -3,13 +3,9 @@ const Geocoder = require('react-native-geocoder').default;
 const Elm = require('./elm');
 const secret = require('./secret.json');
 const component = Elm.Main.start((app) => {
-  const futureProgress = new Animated.Value(0);
-  futureProgress.addListener((state) => {
-    app.ports.futureProgress.send(state.value);
-  });
-  const pastProgress = new Animated.Value(0);
-  pastProgress.addListener((state) => {
-    app.ports.pastProgress.send(state.value);
+  const progress = new Animated.Value(0);
+  progress.addListener((state) => {
+    app.ports.progresses.send(state.value);
   });
 
   app.ports.animateLayout.subscribe(() => {
@@ -41,11 +37,8 @@ const component = Elm.Main.start((app) => {
         app.ports.geocodes.send('Not Found');
       });
   });
-  app.ports.animateFutureProgress.subscribe(() => {
-    spring(futureProgress);
-  });
-  app.ports.animatePastProgress.subscribe(() => {
-    spring(pastProgress);
+  app.ports.animateChart.subscribe(() => {
+    spring(progress);
   });
 
   function spring(animated) {

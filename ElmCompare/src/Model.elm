@@ -74,6 +74,5 @@ type Msg
     | PastForecastsReceived (Result Http.Error (List Forecast))
     | LocationReceived Coords
     | GeocodeReceived String
-    | FutureProgressReceived Float
-    | PastProgressReceived Float
+    | ProgressReceived Float
     | NoOp

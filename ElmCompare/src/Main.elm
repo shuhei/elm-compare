@@ -143,8 +143,7 @@ update msg model =
               }
             , Cmd.batch
                 [ animateLayout ()
-                , animateFutureProgress ()
-                , animatePastProgress ()
+                , animateChart ()
                 ]
             )
 
@@ -158,8 +157,7 @@ update msg model =
               }
             , Cmd.batch
                 [ animateLayout ()
-                , animateFutureProgress ()
-                , animatePastProgress ()
+                , animateChart ()
                 ]
             )
 
@@ -185,13 +183,11 @@ update msg model =
             , Cmd.none
             )
 
-        FutureProgressReceived progress ->
-            ( { model | future = updateProgress model.future progress }
-            , Cmd.none
-            )
-
-        PastProgressReceived progress ->
-            ( { model | past = updateProgress model.past progress }
+        ProgressReceived progress ->
+            ( { model
+                | future = updateProgress model.future progress
+                , past = updateProgress model.past progress
+              }
             , Cmd.none
             )
 
@@ -223,10 +219,7 @@ port getLocation : () -> Cmd msg
 port geocode : Coords -> Cmd msg
 
 
-port animateFutureProgress : () -> Cmd msg
-
-
-port animatePastProgress : () -> Cmd msg
+port animateChart : () -> Cmd msg
 
 
 
@@ -239,10 +232,7 @@ port locations : (Coords -> msg) -> Sub msg
 port geocodes : (String -> msg) -> Sub msg
 
 
-port futureProgress : (Float -> msg) -> Sub msg
-
-
-port pastProgress : (Float -> msg) -> Sub msg
+port progresses : (Float -> msg) -> Sub msg
 
 
 subscriptions : Model -> Sub Msg
@@ -250,8 +240,7 @@ subscriptions model =
     Sub.batch
         [ locations LocationReceived
         , geocodes GeocodeReceived
-        , futureProgress FutureProgressReceived
-        , pastProgress PastProgressReceived
+        , progresses ProgressReceived
         ]
 
 
