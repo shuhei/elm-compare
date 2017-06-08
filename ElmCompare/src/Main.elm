@@ -79,6 +79,13 @@ updateForecasts day forecasts theOther =
     }
 
 
+updateMinMax : Day -> List Forecast -> Day
+updateMinMax day theOther =
+    { day
+        | heights = AV.setTarget (calcHeights day.forecasts theOther) day.heights
+    }
+
+
 updateProgress : Day -> Float -> Day
 updateProgress day progress =
     { day | heights = AV.updateProgress progress day.heights }
@@ -132,10 +139,12 @@ update msg model =
         FutureForecastsReceived (Ok forecasts) ->
             ( { model
                 | future = updateForecasts model.future forecasts model.past.forecasts
+                , past = updateMinMax model.past forecasts
               }
             , Cmd.batch
                 [ animateLayout ()
                 , animateFutureProgress ()
+                , animatePastProgress ()
                 ]
             )
 
@@ -145,9 +154,11 @@ update msg model =
         PastForecastsReceived (Ok forecasts) ->
             ( { model
                 | past = updateForecasts model.past forecasts model.future.forecasts
+                , future = updateMinMax model.future forecasts
               }
             , Cmd.batch
                 [ animateLayout ()
+                , animateFutureProgress ()
                 , animatePastProgress ()
                 ]
             )
