@@ -29,12 +29,12 @@ const component = Elm.Main.start((app) => {
     Geocoder.geocodePosition(coords)
       .then((res) => {
         const geocode = res[0];
-        const name = `${geocode.adminArea}, ${geocode.country}`;
+        const name = `${geocode.locality}, ${geocode.adminArea}`;
         app.ports.geocodes.send(name);
       })
       .catch((err) => {
-        console.error('Failed to geocode', err);
-        app.ports.geocodes.send('Not Found');
+        console.log('Failed to geocode', err);
+        app.ports.geocodes.send('Location name not found');
       });
   });
   app.ports.animateChart.subscribe(() => {
