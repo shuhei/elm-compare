@@ -4,6 +4,7 @@ import Date exposing (Date)
 import Http
 import NativeApi.Animated exposing (AnimatedValue)
 import DateUtils exposing (..)
+import AnimatedValues as AV
 
 
 type alias Model =
@@ -41,15 +42,7 @@ type alias Day =
     { date : Date
     , candidates : List Date
     , forecasts : List Forecast
-    , fromHeights : List Float
-    , toHeights : List Float
-    , progress : Float
-    }
-
-
-type alias Flags =
-    { apiKey : String
-    , timestamp : Float
+    , heights : AV.AnimatedValues
     }
 
 
@@ -66,6 +59,12 @@ emptyForecasts =
             }
     in
         List.map makeForecast <| List.range 0 23
+
+
+type alias Flags =
+    { apiKey : String
+    , timestamp : Float
+    }
 
 
 type Msg

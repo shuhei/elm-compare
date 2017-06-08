@@ -10,6 +10,7 @@ import NativeUi.ART.Path as Path
 import NativeApi.Dimensions exposing (window)
 import Model exposing (..)
 import Icons
+import AnimatedValues as AV
 
 
 type alias WeatherRange =
@@ -174,14 +175,6 @@ weatherBorders ranges =
         E.view [ topStyle ] borders
 
 
-interpolateHeights : Day -> List Float
-interpolateHeights day =
-    List.map2
-        (\from to -> from + (to - from) * day.progress)
-        day.fromHeights
-        day.toHeights
-
-
 hourlyChart : Model -> Node Msg
 hourlyChart model =
     let
@@ -215,14 +208,14 @@ hourlyChart model =
                         [ AP.fill "#99999944"
                         , AP.d <|
                             areaChartPath chartWidth chartHeight <|
-                                interpolateHeights model.past
+                                AV.interpolate model.past.heights
                         ]
                         []
                     , AE.shape
                         [ AP.fill "#ff666666"
                         , AP.d <|
                             areaChartPath chartWidth chartHeight <|
-                                interpolateHeights model.future
+                                AV.interpolate model.future.heights
                         ]
                         []
                     ]

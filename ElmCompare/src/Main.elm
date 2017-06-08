@@ -15,6 +15,7 @@ import DateUtils exposing (..)
 import Weather
 import DateSelector exposing (dateSelector)
 import HourlyChart exposing (hourlyChart, calcHeight)
+import AnimatedValues as AV
 
 
 -- INIT
@@ -37,6 +38,9 @@ init flags =
         yesterday =
             subDays 1 today
 
+        zeros =
+            List.repeat 24 0
+
         model =
             { apiKey = flags.apiKey
             , location = dummyLocation
@@ -45,17 +49,13 @@ init flags =
                 { date = today
                 , candidates = List.map (flip addDays <| today) <| List.range 0 6
                 , forecasts = emptyForecasts
-                , fromHeights = List.repeat 24 0
-                , toHeights = List.repeat 24 0
-                , progress = 0
+                , heights = AV.AnimatedValues zeros zeros 0
                 }
             , past =
                 { date = yesterday
                 , candidates = [ yesterday, today ]
                 , forecasts = emptyForecasts
-                , fromHeights = List.repeat 24 0
-                , toHeights = List.repeat 24 0
-                , progress = 0
+                , heights = AV.AnimatedValues zeros zeros 0
                 }
             }
     in
@@ -75,15 +75,13 @@ updateForecasts : Day -> List Forecast -> List Forecast -> Day
 updateForecasts day forecasts theOther =
     { day
         | forecasts = forecasts
-        , fromHeights = day.toHeights
-        , toHeights = calcHeights forecasts theOther
-        , progress = 0
+        , heights = AV.setTarget (calcHeights forecasts theOther) day.heights
     }
 
 
 updateProgress : Day -> Float -> Day
 updateProgress day progress =
-    { day | progress = progress }
+    { day | heights = AV.updateProgress progress day.heights }
 
 
 calcHeights : List Forecast -> List Forecast -> List Float
